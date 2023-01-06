@@ -1,0 +1,146 @@
+C51 COMPILER V9.54   GAME                                                                  12/08/2022 12:22:53 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE GAME
+OBJECT MODULE PLACED IN .\Obj\game.obj
+COMPILER INVOKED BY: D:\Program Files (x86)\Keil_v5\C51\BIN\C51.EXE App\game.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\A
+                    -pp\24c02;.\App\iic;.\App\key;.\App\smg;.\Public;.\App\ds18b20;.\App\ds1302;.\App\ired;.\App\time;.\App\xpt2046;.\App\pwm
+                    -;.\App\lcd1602;.\App;.\App\74hc595) DEBUG OBJECTEXTEND PRINT(.\Obj\game.lst) TABS(2) OBJECT(.\Obj\game.obj)
+
+line level    source
+
+   1          #include "game.h"
+   2          
+   3          static char dirction; // 蛇前进方向
+   4          static unsigned char food_y; // 食物行
+   5          static unsigned char food_x; // 食物列
+   6          static unsigned char res_cell; // 剩余格子数
+   7          static unsigned char snake_len;  // 蛇的长度
+   8          static char snake_body_y[64]; // 蛇每个点的坐标
+   9          static char snake_body_x[64]; // 蛇每个点的坐标
+  10          
+  11          void game_init()
+  12          {
+  13   1        // 初始蛇位置
+  14   1        // map[2] = 0x60;
+  15   1        snake_body_x[0] = 3;
+  16   1        snake_body_y[0] = 2;
+  17   1        
+  18   1        snake_body_x[1] = 2;
+  19   1        snake_body_y[1] = 2;
+  20   1        snake_len = 2;
+  21   1        dirction = 'r';
+  22   1        update_food();
+  23   1        update_food();
+  24   1      }
+  25          
+  26          
+  27          // 更新食物坐标
+  28          void update_food()
+  29          {
+  30   1        unsigned char i, j;
+  31   1        unsigned char map[8];
+  32   1        unsigned char pos = rand() % (64 - snake_len);
+  33   1        for (i = 0; i < snake_len; i++) {
+  34   2          map[snake_body_y[i]] |= (0x80 >> snake_body_x[i]);
+  35   2        }
+  36   1        for (i = 0; i < 8; i++) {
+  37   2          if (map[i] == 0xFF)
+  38   2            continue;
+  39   2          for (j = 0; j < 8; j++) {
+  40   3            if (pos == 0) { // food 位置找到
+  41   4              food_y = i;
+  42   4              food_x = j;
+  43   4              return;
+  44   4            }
+  45   3            
+  46   3            if ((map[i] & (0x80 >> j)) == 0)
+  47   3              pos--;
+  48   3          }
+  49   2        }
+  50   1      }
+  51          
+  52          // 当前状态地图 8x8
+  53          void create_map(unsigned char* map)
+C51 COMPILER V9.54   GAME                                                                  12/08/2022 12:22:53 PAGE 2   
+
+  54          {
+  55   1        unsigned char i = 0;
+  56   1        map[food_y] |= (0x80 >> food_x); // 食物的位置
+  57   1        for (i = 0; i < snake_len; i++) {
+  58   2          map[snake_body_y[i]] |= (0x80 >> snake_body_x[i]);
+  59   2        }
+  60   1      }
+  61          
+  62          
+  63          void change_dir(unsigned char d)
+  64          {
+  65   1        if (dirction == 'u' && d == 'd') return;
+  66   1        if (dirction == 'd' && d == 'u') return;
+  67   1        if (dirction == 'l' && d == 'r') return;
+  68   1        if (dirction == 'r' && d == 'l') return;
+  69   1        dirction = d;
+  70   1      }
+  71          
+  72          
+  73          // 蛇移动
+  74          void snake_move()
+  75          {
+  76   1        unsigned char i = snake_len - 1;
+  77   1        unsigned char tail_x = snake_body_x[i];
+  78   1        unsigned char tail_y = snake_body_y[i];
+  79   1        
+  80   1        for (i = snake_len - 1; i > 0; i--) {
+  81   2          snake_body_x[i] = snake_body_x[i-1];
+  82   2          snake_body_y[i] = snake_body_y[i-1];
+  83   2        }
+  84   1        
+  85   1        if (dirction == 'u') {
+  86   2          snake_body_y[0] -= 1;
+  87   2        } else if (dirction == 'd') {
+  88   2          snake_body_y[0] += 1;
+  89   2        } else if (dirction == 'l') {
+  90   2          snake_body_x[0] -= 1;
+  91   2        } else if (dirction == 'r') {
+  92   2          snake_body_x[0] += 1;
+  93   2        }
+  94   1        
+  95   1        // 如果吃到食物
+  96   1        if (snake_body_y[0] == food_y && snake_body_x[0] == food_x) {
+  97   2          snake_body_x[snake_len] = tail_x;
+  98   2          snake_body_y[snake_len] = tail_y;
+  99   2          snake_len++;
+ 100   2          update_food();
+ 101   2        }
+ 102   1        
+ 103   1      }
+ 104          
+ 105          
+ 106          unsigned int is_game_over() {
+ 107   1        unsigned int i = 0;
+ 108   1        if (snake_body_x[0] >= 8 || snake_body_x[0] < 0 || snake_body_y[0] >= 8 || snake_body_y[0] < 0) {
+ 109   2          return 1;
+ 110   2        }
+ 111   1      //  for (i = 1; i < snake_len; i++) {
+ 112   1      //    if (snake_body_x[0] == snake_body_x[i] || snake_body_y[0] == snake_body_y[i]) {
+ 113   1      //      return 1;
+ 114   1      //    }
+ 115   1      //  }
+C51 COMPILER V9.54   GAME                                                                  12/08/2022 12:22:53 PAGE 3   
+
+ 116   1        return 0;
+ 117   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    698    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =    133      15
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

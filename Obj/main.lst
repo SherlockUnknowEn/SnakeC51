@@ -1,0 +1,143 @@
+C51 COMPILER V9.54   MAIN                                                                  12/08/2022 12:22:53 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Obj\main.obj
+COMPILER INVOKED BY: D:\Program Files (x86)\Keil_v5\C51\BIN\C51.EXE User\main.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\
+                    -App\24c02;.\App\iic;.\App\key;.\App\smg;.\Public;.\App\ds18b20;.\App\ds1302;.\App\ired;.\App\time;.\App\xpt2046;.\App\pw
+                    -m;.\App\lcd1602;.\App;.\App\74hc595) DEBUG OBJECTEXTEND PRINT(.\Obj\main.lst) TABS(2) OBJECT(.\Obj\main.obj)
+
+line level    source
+
+   1          //#include <regx52.h>
+   2          #include "lcd1602.h"
+   3          #include "public.h"
+   4          #include "game.h"
+   5          #include "74hc595.h"
+   6          #include <stdlib.h>
+   7          
+   8          
+   9          // 定时器 10ms
+  10          #define TIMER_H0 0xDC
+  11          #define TIMER_L0 0x00
+  12          
+  13          static u16 Tcount = 0;
+  14          
+  15          
+  16          void matrix_on_row(u8 row, u8 col)
+  17          {
+  18   1        _74HC595_write_byte(row);
+  19   1        P0 = ~col;
+  20   1        delay_ms(1);
+  21   1        P0 =0xFF;
+  22   1      }
+  23          
+  24          
+  25          void show_map()
+  26          {
+  27   1        u8 i;
+  28   1        u8 map[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // 地图
+  29   1        create_map(map);
+  30   1        for (i = 0; i < 8; i++) {
+  31   2          matrix_on_row(0x80 >> i, map[i]);
+  32   2        }
+  33   1      }
+  34          
+  35          
+  36          // 计时器中断函数
+  37          void timer0_routine() interrupt 1 {
+  38   1        
+  39   1        TH0 = TIMER_H0;
+  40   1        TL0 = TIMER_L0;
+  41   1        Tcount++;
+  42   1        
+  43   1        if (Tcount >= 50) { // 每隔0.7s 更新map
+  44   2          Tcount = 0;
+  45   2          snake_move();
+  46   2        }
+  47   1      }
+  48          
+  49          u8 keyboard()
+  50          {
+  51   1        u8 i = 0;
+  52   1        u8 a = 0x80; // 1000 0000
+  53   1        for (i = 0; i < 4; i++) {
+C51 COMPILER V9.54   MAIN                                                                  12/08/2022 12:22:53 PAGE 2   
+
+  54   2          P1 = 0xFF;
+  55   2          // delay_ms(20);
+  56   2          P1 = P1 & (~a); // 高四位某位为1
+  57   2          a = a >> 1;
+  58   2          
+  59   2      //    if (P1_3 == 0) { delay_ms(20); while(P1_3 == 0); delay_ms(20); return 4 * i + 1; }
+  60   2      //    if (P1_2 == 0) { delay_ms(20); while(P1_2 == 0); delay_ms(20); return 4 * i + 2; }
+  61   2      //    if (P1_1 == 0) { delay_ms(20); while(P1_1 == 0); delay_ms(20); return 4 * i + 3; }
+  62   2      //    if (P1_0 == 0) { delay_ms(20); while(P1_0 == 0); delay_ms(20); return 4 * i + 4; }
+  63   2          if (P1_3 == 0) { return 4 * i + 1; }
+  64   2          if (P1_2 == 0) { return 4 * i + 2; }
+  65   2          if (P1_1 == 0) { return 4 * i + 3; }
+  66   2          if (P1_0 == 0) { return 4 * i + 4; }
+  67   2        }
+  68   1        return 99;
+  69   1      }
+  70          
+  71          void light_all()
+  72          {
+  73   1        matrix_on_row(0x80, 0xFF);
+  74   1        matrix_on_row(0x40, 0xFF);
+  75   1        matrix_on_row(0x20, 0xFF);
+  76   1        matrix_on_row(0x10, 0xFF);
+  77   1        matrix_on_row(0x08, 0xFF);
+  78   1        matrix_on_row(0x04, 0xFF);
+  79   1        matrix_on_row(0x02, 0xFF);
+  80   1        matrix_on_row(0x01, 0xFF);
+  81   1      }
+  82          
+  83          void dir_scan(u8 k)
+  84          {
+  85   1        if (k == 2) {
+  86   2          change_dir('u');
+  87   2        } else if (k == 10) {
+  88   2          change_dir('d');
+  89   2        } else if (k == 5) {
+  90   2          change_dir('l');
+  91   2        } else if (k == 7) {
+  92   2          change_dir('r');
+  93   2        }
+  94   1      }
+  95          
+  96          void main()
+  97          {
+  98   1        u8 k;
+  99   1        _74HC595_init();
+ 100   1        game_init();
+ 101   1        timer0_init(TIMER_H0, TIMER_L0);
+ 102   1        while(1)
+ 103   1        {   
+ 104   2          if (is_game_over()) { 
+ 105   3            light_all();
+ 106   3          } else {
+ 107   3            show_map();
+ 108   3            k = keyboard();
+ 109   3            dir_scan(k);
+ 110   3          }
+ 111   2        }   
+ 112   1        
+ 113   1      }
+ 114          
+
+C51 COMPILER V9.54   MAIN                                                                  12/08/2022 12:22:53 PAGE 3   
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    416    ----
+   CONSTANT SIZE    =      8    ----
+   XDATA SIZE       =      2      12
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,45 @@
+C51 COMPILER V9.54   74HC595                                                               12/08/2022 12:22:53 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE 74HC595
+OBJECT MODULE PLACED IN .\Obj\74hc595.obj
+COMPILER INVOKED BY: D:\Program Files (x86)\Keil_v5\C51\BIN\C51.EXE App\74hc595\74hc595.c LARGE OPTIMIZE(8,SPEED) BROWSE
+                    - INCDIR(.\App\24c02;.\App\iic;.\App\key;.\App\smg;.\Public;.\App\ds18b20;.\App\ds1302;.\App\ired;.\App\time;.\App\xpt204
+                    -6;.\App\pwm;.\App\lcd1602;.\App;.\App\74hc595) DEBUG OBJECTEXTEND PRINT(.\Obj\74hc595.lst) TABS(2) OBJECT(.\Obj\74hc595.
+                    -obj)
+
+line level    source
+
+   1          #include "74hc595.h"
+   2          
+   3          void _74HC595_init()
+   4          {
+   5   1        SCK = 0;
+   6   1        RCK = 0;
+   7   1      }
+   8          
+   9          void _74HC595_write_byte(unsigned char byte) // 行扫描
+  10          {
+  11   1        unsigned char  i = 0;
+  12   1        for (i = 0; i < 8; i++) {
+  13   2          SR = byte & (0x80 >> i);
+  14   2          SCK = 1;
+  15   2          SCK = 0;
+  16   2        }   
+  17   1        RCK = 1;
+  18   1        RCK = 0;
+  19   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     51    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
